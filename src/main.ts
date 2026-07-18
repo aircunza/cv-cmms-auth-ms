@@ -13,6 +13,17 @@ async function bootstrap() {
       transport: Transport.NATS,
       options: {
         servers: envs.natsServers,
+        user: envs.natsUser,
+        pass: envs.natsPass,
+        // tls: {
+        //   ca: [readFileSync(envs.natsCaPath)],
+        //   rejectUnauthorized: true,
+        //   servername: envs.natsServerName,
+        // },
+        maxReconnectAttempts: 10,
+        reconnectTimeWait: 2000,
+        timeout: 5000,
+        pingInterval: 10000,
       },
     },
   );

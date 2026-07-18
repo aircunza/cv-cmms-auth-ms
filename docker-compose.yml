@@ -1,0 +1,32 @@
+services:
+  auth_db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: auth_db
+    restart: on-failure #unless-stopped
+    ports:
+      - '1433:1433'
+    environment:
+      ACCEPT_EULA: 'Y'
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+    volumes:
+      - auth_db_data:/var/opt/mssql
+
+  nats-main:
+    image: nats:latest
+    container_name: nats-server
+    ports:
+      - '4222:4222'
+      - '8222:8222'
+    #environment:
+    #  NATS_USER: devuser
+    #  NATS_PASS: devpass
+    command:
+      - --user
+      - ${NATS_USER}
+      - --pass
+      - ${NATS_PASS}
+      - -m
+      - '8222'
+
+volumes:
+  auth_db_data:

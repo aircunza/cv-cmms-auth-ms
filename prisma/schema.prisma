@@ -1,0 +1,29 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "sqlserver"
+}
+
+model User {
+  id            String    @id @default(uuid()) @db.UniqueIdentifier
+  code          String    @unique @db.NVarChar(255)
+  email         String    @unique @db.NVarChar(255)
+  userName      String    @map("user_name") @db.NVarChar(255)
+  userShortName String    @map("user_short_name") @db.NVarChar(70)
+  password      String    @db.NVarChar(Max)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.DateTimeOffset
+  updatedAt     DateTime? @map("updated_at") @db.DateTimeOffset
+  isActive      String?   @map("is_active") @db.Char(1)
+  isVerified    String?   @map("is_verified") @db.Char(1)
+  addAttribute1 String?   @map("add_attribute_1") @db.NVarChar(255)
+  addAttribute2 String?   @map("add_attribute_2") @db.NVarChar(255)
+  addAttribute3 String?   @map("add_attribute_3") @db.NVarChar(255)
+  addAttribute4 String?   @map("add_attribute_4") @db.NVarChar(255)
+  addAttribute5 String?   @map("add_attribute_5") @db.NVarChar(255)
+
+  @@map("users")
+}
