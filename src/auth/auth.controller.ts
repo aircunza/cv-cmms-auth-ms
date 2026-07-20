@@ -16,4 +16,14 @@ export class AuthController {
   registerUser(@Payload() registerUserDto: RegisterUserDto) {
     return this.authService.registerUser(registerUserDto);
   }
+
+  @MessagePattern('auth.login.user')
+  loginUser(@Payload() loginUserDto: LoginUserDto) {
+    return this.authService.loginUser(loginUserDto);
+  }
+
+  @MessagePattern('auth.verify.user')
+  verifyToken(@Payload() token: string) {
+    return this.authService.verifyToken(token);
+  }
 }

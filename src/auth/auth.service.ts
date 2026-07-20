@@ -7,7 +7,7 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma.service';
 import { LoginUserDto, RegisterUserDto } from './dto';
 
-import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { JwtPayload, JwtPayloadRaw } from './interfaces/jwt-payload.interface';
 import { envs } from 'src/config';
 import { randomUUID } from 'crypto';
 
@@ -24,17 +24,20 @@ export class AuthService {
     return this.jwtService.signAsync(payload);
   }
 
-  async verifyToken(token: string) {
+  verifyToken(token: string) {
     try {
-      const user = this.jwtService.verify<JwtPayload>(token, {
+      const rawUser = this.jwtService.verify<JwtPayloadRaw>(token, {
         secret: envs.jwtSecret,
       });
 
+      const { iat: _iat, exp: _exp, ...user } = rawUser;
+
       return {
-        user,
-        token: await this.signJWT(user),
+        user: user,
+        token: token, // if you want sent a new token -> await this.signJWT(user)
       };
-    } catch {
+    } catch (error) {
+      console.error('Error verifying token:', error);
       throw new RpcException({
         status: 401,
         message: 'Invalid token',
@@ -82,6 +85,50 @@ export class AuthService {
           password: hashedPassword,
         },
       });
+
+      const { password: _, ...userWithoutPassword } = user;
+
+      return {
+        user: userWithoutPassword,
+        token: await this.signJWT(userWithoutPassword),
+      };
+    } catch (error) {
+      if (error instanceof RpcException) {
+        throw error;
+      }
+
+      throw new RpcException({
+        status: 500,
+        message: 'Internal server error',
+      });
+    }
+  }
+
+  async loginUser(loginUserDto: LoginUserDto) {
+    const { email, password } = loginUserDto;
+
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: {
+          email,
+        },
+      });
+
+      if (!user) {
+        throw new RpcException({
+          status: 400,
+          message: 'User/Password not valid',
+        });
+      }
+
+      const passwordValid = await bcrypt.compare(password, user.password);
+
+      if (!passwordValid) {
+        throw new RpcException({
+          status: 400,
+          message: 'User/Password not valid',
+        });
+      }
 
       const { password: _, ...userWithoutPassword } = user;
 
