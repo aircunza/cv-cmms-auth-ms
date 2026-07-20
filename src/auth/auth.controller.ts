@@ -26,4 +26,9 @@ export class AuthController {
   verifyToken(@Payload() token: string) {
     return this.authService.verifyToken(token);
   }
+
+  @MessagePattern('auth.logout.user')
+  logoutUser(@Payload() token: string) {
+    return this.authService.logoutUser(token);
+  }
 }

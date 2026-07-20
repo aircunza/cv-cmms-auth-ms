@@ -45,6 +45,25 @@ export class AuthService {
     }
   }
 
+  logoutUser(token: string) {
+    try {
+      this.jwtService.verify<JwtPayloadRaw>(token, {
+        secret: envs.jwtSecret,
+      });
+
+      return {
+        status: 'ok',
+        message: 'Logged out successfully',
+      };
+    } catch (error) {
+      console.error('Error logging out token:', error);
+      throw new RpcException({
+        status: 401,
+        message: 'Invalid token',
+      });
+    }
+  }
+
   async registerUser(registerUserDto: RegisterUserDto) {
     const { code, email, userName, userShortName, password } = registerUserDto;
 
