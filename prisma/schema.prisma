@@ -9,36 +9,65 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(uuid()) @db.UniqueIdentifier
-  code          String    @unique @db.NVarChar(255)
-  email         String    @unique @db.NVarChar(255)
-  userName      String    @map("user_name") @db.NVarChar(255)
-  userShortName String    @map("user_short_name") @db.NVarChar(70)
-  password      String    @db.NVarChar(Max)
-  createdAt     DateTime  @default(now()) @map("created_at") @db.DateTimeOffset
-  updatedAt     DateTime? @map("updated_at") @db.DateTimeOffset
-  isActive      String?   @map("is_active") @db.Char(1)
-  isVerified    String?   @map("is_verified") @db.Char(1)
-  addAttribute1 String?   @map("add_attribute_1") @db.NVarChar(255)
-  addAttribute2 String?   @map("add_attribute_2") @db.NVarChar(255)
-  addAttribute3 String?   @map("add_attribute_3") @db.NVarChar(255)
-  addAttribute4 String?   @map("add_attribute_4") @db.NVarChar(255)
-  addAttribute5 String?   @map("add_attribute_5") @db.NVarChar(255)
+  id                 String              @id @default(uuid()) @db.UniqueIdentifier
+  code               String              @unique @db.NVarChar(255)
+  email              String              @unique @db.NVarChar(255)
+  userName           String              @map("user_name") @db.NVarChar(255)
+  userShortName      String              @map("user_short_name") @db.NVarChar(70)
+  password           String              @db.NVarChar(Max)
+  createdAt          DateTime            @default(now()) @map("created_at") @db.DateTimeOffset
+  updatedAt          DateTime?           @map("updated_at") @db.DateTimeOffset
+  isActive           String?             @map("is_active") @db.Char(1)
+  isVerified         String?             @map("is_verified") @db.Char(1)
+  addAttribute1      String?             @map("add_attribute_1") @db.NVarChar(255)
+  addAttribute2      String?             @map("add_attribute_2") @db.NVarChar(255)
+  addAttribute3      String?             @map("add_attribute_3") @db.NVarChar(255)
+  addAttribute4      String?             @map("add_attribute_4") @db.NVarChar(255)
+  addAttribute5      String?             @map("add_attribute_5") @db.NVarChar(255)
+  userOrgPermissions UserOrgPermission[]
 
   @@map("users")
 }
 
 model Organization {
-  id            String   @id @default(uuid()) @db.UniqueIdentifier
-  code          String   @unique @db.NVarChar(255)
-  name          String   @db.NVarChar(255)
-  countryCode   String   @map("country_code") @db.NVarChar(10)
-  countryName   String   @map("country_name") @db.NVarChar(100)
-  timezone      String   @db.NVarChar(100)
-  offsetMinutes Int?     @map("offset_minutes")
-  createdAt     DateTime @default(now()) @map("created_at") @db.DateTimeOffset
-  updatedAt     DateTime @default(now()) @map("updated_at") @db.DateTimeOffset
-  isActive      String   @default("Y") @map("is_active") @db.Char(1)
+  id                 String              @id @default(uuid()) @db.UniqueIdentifier
+  code               String              @unique @db.NVarChar(255)
+  name               String              @db.NVarChar(255)
+  countryCode        String              @map("country_code") @db.NVarChar(10)
+  countryName        String              @map("country_name") @db.NVarChar(100)
+  timezone           String              @db.NVarChar(100)
+  offsetMinutes      Int?                @map("offset_minutes")
+  createdAt          DateTime            @default(now()) @map("created_at") @db.DateTimeOffset
+  updatedAt          DateTime            @default(now()) @map("updated_at") @db.DateTimeOffset
+  isActive           String              @default("Y") @map("is_active") @db.Char(1)
+  userOrgPermissions UserOrgPermission[]
 
   @@map("organizations")
+}
+
+model UserOrgPermission {
+  id String @id @default(uuid()) @db.UniqueIdentifier
+
+  userId         String @map("user_id") @db.UniqueIdentifier
+  organizationId String @map("organization_id") @db.UniqueIdentifier
+
+  roleCode        String @map("role_code") @db.NVarChar(100)
+  roleName        String @map("role_name") @db.NVarChar(150)
+  roleDescription String @map("role_description") @db.NVarChar(255)
+
+  permissions       String  @db.NVarChar(Max)
+  deniedPermissions String? @map("denied_permissions") @db.NVarChar(Max)
+
+  isActive   String   @default("Y") @map("is_active") @db.Char(1)
+  createdAt  DateTime @default(now()) @map("created_at") @db.DateTimeOffset
+  updatedAt  DateTime @default(now()) @map("updated_at") @db.DateTimeOffset
+  assignedAt DateTime @default(now()) @map("assigned_at") @db.DateTimeOffset
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: NoAction)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction)
+
+  @@unique([userId, organizationId, roleCode])
+  @@index([userId])
+  @@index([organizationId])
+  @@map("user_org_permissions")
 }
