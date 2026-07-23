@@ -124,12 +124,25 @@ export class AuthService {
   }
 
   async loginUser(loginUserDto: LoginUserDto) {
-    const { email, password } = loginUserDto;
+    const { email, code, password } = loginUserDto;
+
+    const hasEmail = Boolean(email);
+    const hasCode = Boolean(code);
 
     try {
-      const user = await this.prisma.user.findUnique({
+      if ((hasEmail && hasCode) || (!hasEmail && !hasCode)) {
+        throw new RpcException({
+          status: 400,
+          message: 'Provide exactly one identifier: email or code',
+        });
+      }
+
+      const user = await this.prisma.user.findFirst({
         where: {
-          email,
+          OR: [
+            ...(hasEmail ? [{ email: email! }] : []),
+            ...(hasCode ? [{ code: code! }] : []),
+          ],
         },
       });
 
