@@ -180,6 +180,36 @@ export class AuthService {
     }
   }
 
+  async validateUserByCode(code: string) {
+    try {
+      const user = await this.prisma.user.findFirst({
+        where: {
+          code,
+          OR: [{ isActive: 'Y' }, { isActive: null }],
+        },
+      });
+
+      if (!user) {
+        throw new RpcException({
+          status: 404,
+          message: 'User not found',
+        });
+      }
+
+      const { password: _password, ...userWithoutPassword } = user;
+      return { user: userWithoutPassword };
+    } catch (error) {
+      if (error instanceof RpcException) {
+        throw error;
+      }
+
+      throw new RpcException({
+        status: 500,
+        message: 'Internal server error',
+      });
+    }
+  }
+
   health() {
     return {
       status: 'ok',

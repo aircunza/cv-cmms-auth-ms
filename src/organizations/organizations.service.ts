@@ -101,6 +101,35 @@ export class OrganizationsService {
     }
   }
 
+  async existsByCode(code: string) {
+    try {
+      const organization = await this.prisma.organization.findFirst({
+        where: {
+          code,
+          isActive: 'Y',
+        },
+      });
+
+      if (!organization) {
+        throw new RpcException({
+          status: 404,
+          message: 'Organization not found',
+        });
+      }
+
+      return { organization };
+    } catch (error) {
+      if (error instanceof RpcException) {
+        throw error;
+      }
+
+      throw new RpcException({
+        status: 500,
+        message: 'Internal server error',
+      });
+    }
+  }
+
   async findAllOrganizations(findAllOrganizationsDto: FindAllOrganizationsDto) {
     const { code, name, countryCode } = findAllOrganizationsDto;
 
@@ -155,22 +184,11 @@ export class OrganizationsService {
         });
       }
 
-      if (code !== undefined) {
-        const duplicatedCode = await this.prisma.organization.findFirst({
-          where: {
-            id: {
-              not: id,
-            },
-            code,
-          },
+      if (code !== undefined && code !== organization.code) {
+        throw new RpcException({
+          status: 400,
+          message: 'Organization code cannot be updated',
         });
-
-        if (duplicatedCode) {
-          throw new RpcException({
-            status: 400,
-            message: 'The code is already registered',
-          });
-        }
       }
 
       if (name !== undefined) {
@@ -193,7 +211,6 @@ export class OrganizationsService {
       }
 
       const hasUpdatableFields =
-        code !== undefined ||
         name !== undefined ||
         countryCode !== undefined ||
         countryName !== undefined ||
@@ -210,7 +227,6 @@ export class OrganizationsService {
       const updatedOrganization = await this.prisma.organization.update({
         where: { id },
         data: {
-          ...(code !== undefined ? { code } : {}),
           ...(name !== undefined ? { name } : {}),
           ...(countryCode !== undefined ? { countryCode } : {}),
           ...(countryName !== undefined ? { countryName } : {}),

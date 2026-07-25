@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { LoginUserDto, RegisterUserDto } from './dto';
+import { LoginUserDto, RegisterUserDto, ValidateUserCodeDto } from './dto';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
@@ -30,5 +30,10 @@ export class AuthController {
   @MessagePattern('auth.logout.user')
   logoutUser(@Payload() token: string) {
     return this.authService.logoutUser(token);
+  }
+
+  @MessagePattern('user.exists.by.code')
+  validateUserByCode(@Payload() dto: ValidateUserCodeDto) {
+    return this.authService.validateUserByCode(dto.code);
   }
 }

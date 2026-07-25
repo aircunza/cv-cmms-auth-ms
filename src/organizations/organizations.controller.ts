@@ -5,6 +5,7 @@ import {
   FindAllOrganizationsDto,
   OrganizationIdDto,
   UpdateOrganizationDto,
+  ValidateOrganizationCodeDto,
 } from './dto';
 import { OrganizationsService } from './organizations.service';
 
@@ -20,6 +21,11 @@ export class OrganizationsController {
   @MessagePattern('organization.find.one')
   findOneOrganization(@Payload() organizationIdDto: OrganizationIdDto) {
     return this.organizationsService.findOneOrganization(organizationIdDto.id);
+  }
+
+  @MessagePattern('organization.exists.by.code')
+  existsByCode(@Payload() dto: ValidateOrganizationCodeDto) {
+    return this.organizationsService.existsByCode(dto.code);
   }
 
   @MessagePattern('organization.find.all')
