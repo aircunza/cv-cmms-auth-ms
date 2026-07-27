@@ -10,6 +10,12 @@ import { NATS_SERVICE, envs } from 'src/config';
         transport: Transport.NATS,
         options: {
           servers: envs.natsServers,
+          user: envs.natsUser,
+          pass: envs.natsPass,
+          maxReconnectAttempts: 10,
+          reconnectTimeWait: 2000,
+          timeout: 5000,
+          pingInterval: 10000,
         },
       },
     ]),

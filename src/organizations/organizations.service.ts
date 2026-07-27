@@ -7,10 +7,14 @@ import {
   FindAllOrganizationsDto,
   UpdateOrganizationDto,
 } from './dto';
+import { OrganizationEventsService } from './organization-events.service';
 
 @Injectable()
 export class OrganizationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly organizationEvents: OrganizationEventsService,
+  ) {}
 
   async createOrganization(createOrganizationDto: CreateOrganizationDto) {
     const { code, name, countryCode, countryName, timezone, offsetMinutes } =
@@ -58,6 +62,8 @@ export class OrganizationsService {
           isActive: 'Y',
         },
       });
+
+      this.organizationEvents.emitCreated(organization);
 
       return { organization };
     } catch (error) {
@@ -236,6 +242,8 @@ export class OrganizationsService {
         },
       });
 
+      this.organizationEvents.emitUpdated(updatedOrganization);
+
       return { organization: updatedOrganization };
     } catch (error) {
       if (error instanceof RpcException) {
@@ -272,6 +280,8 @@ export class OrganizationsService {
           updatedAt: new Date(),
         },
       });
+
+      this.organizationEvents.emitDeactivated(updatedOrganization);
 
       return {
         organization: updatedOrganization,
