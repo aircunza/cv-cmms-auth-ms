@@ -8,6 +8,7 @@ import { PrismaService } from 'src/prisma.service';
 import { LoginUserDto, RegisterUserDto } from './dto';
 
 import { JwtPayload, JwtPayloadRaw } from './interfaces/jwt-payload.interface';
+import { OrganizationRole, Role } from './interfaces/organization-role.interface';
 import { envs } from 'src/config';
 import { randomUUID } from 'crypto';
 
@@ -20,11 +21,68 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
+  private parsePermissions(value: string | null): string[] | null {
+    if (!value) return null;
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      if (!Array.isArray(parsed)) return null;
+      return parsed.filter((item) => typeof item === 'string');
+    } catch {
+      return null;
+    }
+  }
+
+  async getUserOrganizations(userId: string): Promise<OrganizationRole[]> {
+    const userOrgPermissions = await this.prisma.userOrgPermission.findMany({
+      where: {
+        userId,
+        isActive: 'Y',
+      },
+      include: {
+        organization: true,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+
+    const orgMap = new Map<string, OrganizationRole>();
+
+    for (const perm of userOrgPermissions) {
+      const org = perm.organization;
+      const existing = orgMap.get(org.id);
+
+      const role: Role = {
+        roleCode: perm.roleCode,
+        roleName: perm.roleName,
+        roleDescription: perm.roleDescription,
+        permissions: this.parsePermissions(perm.permissions) ?? [],
+        deniedPermissions: this.parsePermissions(perm.deniedPermissions),
+      };
+
+      if (existing) {
+        existing.roles.push(role);
+      } else {
+        orgMap.set(org.id, {
+          organizationId: org.id,
+          organizationCode: org.code,
+          organizationName: org.name,
+          countryCode: org.countryCode,
+          countryName: org.countryName,
+          timezone: org.timezone,
+          roles: [role],
+        });
+      }
+    }
+
+    return Array.from(orgMap.values());
+  }
+
   async signJWT(payload: JwtPayload) {
     return this.jwtService.signAsync(payload);
   }
 
-  verifyToken(token: string) {
+  async verifyToken(token: string) {
     try {
       const rawUser = this.jwtService.verify<JwtPayloadRaw>(token, {
         secret: envs.jwtSecret,
@@ -32,9 +90,12 @@ export class AuthService {
 
       const { iat: _iat, exp: _exp, ...user } = rawUser;
 
+      const organizations = await this.getUserOrganizations(user.id);
+
       return {
         user: user,
-        token: token, // if you want sent a new token -> await this.signJWT(user)
+        organizations,
+        token: token,
       };
     } catch (error) {
       console.error('Error verifying token:', error);
@@ -164,8 +225,11 @@ export class AuthService {
 
       const { password: _, ...userWithoutPassword } = user;
 
+      const organizations = await this.getUserOrganizations(user.id);
+
       return {
         user: userWithoutPassword,
+        organizations,
         token: await this.signJWT(userWithoutPassword),
       };
     } catch (error) {
