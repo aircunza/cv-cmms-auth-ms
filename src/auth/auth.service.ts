@@ -109,7 +109,7 @@ export class AuthService {
       return {
         user: userWithoutPassword,
         organizations,
-        token: token,
+        auth_token: token,
       };
     } catch (error) {
       console.error('Error verifying token:', error);
@@ -184,7 +184,7 @@ export class AuthService {
 
       return {
         user: userWithoutPassword,
-        token: await this.signJWT({ id: user.id }),
+        auth_token: await this.signJWT({ id: user.id }),
       };
     } catch (error) {
       if (error instanceof RpcException) {
@@ -244,7 +244,7 @@ export class AuthService {
       return {
         user: userWithoutPassword,
         organizations,
-        token: await this.signJWT({ id: user.id }),
+        auth_token: await this.signJWT({ id: user.id }),
       };
     } catch (error) {
       if (error instanceof RpcException) {
