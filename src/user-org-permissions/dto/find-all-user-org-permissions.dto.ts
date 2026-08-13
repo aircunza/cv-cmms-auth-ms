@@ -1,4 +1,10 @@
-import { IsOptional, IsString, IsUUID, MaxLength, Matches } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  Matches,
+} from 'class-validator';
 
 export class FindAllUserOrgPermissionsDto {
   @IsOptional()

@@ -8,7 +8,10 @@ import { PrismaService } from 'src/prisma.service';
 import { LoginUserDto, RegisterUserDto } from './dto';
 
 import { JwtPayload, JwtPayloadRaw } from './interfaces/jwt-payload.interface';
-import { OrganizationRole, Role } from './interfaces/organization-role.interface';
+import {
+  OrganizationRole,
+  Role,
+} from './interfaces/organization-role.interface';
 import { envs } from 'src/config';
 import { randomUUID } from 'crypto';
 
@@ -88,12 +91,23 @@ export class AuthService {
         secret: envs.jwtSecret,
       });
 
-      const { iat: _iat, exp: _exp, ...user } = rawUser;
+      const user = await this.prisma.user.findUnique({
+        where: { id: rawUser.id },
+      });
+
+      if (!user) {
+        throw new RpcException({
+          status: 401,
+          message: 'Invalid token',
+        });
+      }
+
+      const { password: _password, ...userWithoutPassword } = user;
 
       const organizations = await this.getUserOrganizations(user.id);
 
       return {
-        user: user,
+        user: userWithoutPassword,
         organizations,
         token: token,
       };
@@ -170,7 +184,7 @@ export class AuthService {
 
       return {
         user: userWithoutPassword,
-        token: await this.signJWT(userWithoutPassword),
+        token: await this.signJWT({ id: user.id }),
       };
     } catch (error) {
       if (error instanceof RpcException) {
@@ -230,7 +244,7 @@ export class AuthService {
       return {
         user: userWithoutPassword,
         organizations,
-        token: await this.signJWT(userWithoutPassword),
+        token: await this.signJWT({ id: user.id }),
       };
     } catch (error) {
       if (error instanceof RpcException) {
