@@ -2,6 +2,6 @@ import { IsString, MaxLength } from 'class-validator';
 
 export class ValidateUserCodeDto {
   @IsString()
-  @MaxLength(12)
+  @MaxLength(255)
   code!: string;
 }
