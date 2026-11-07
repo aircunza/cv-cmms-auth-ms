@@ -108,7 +108,7 @@ export class UserOrgPermissionsService {
           roleDescription,
           permissions: JSON.stringify(permissions),
           deniedPermissions: this.serializePermissions(deniedPermissions),
-          isActive: 'Y',
+          isActive: createUserOrgPermissionDto.isActive ?? 'Y',
           assignedAt: assignedAt ? new Date(assignedAt) : new Date(),
           updatedAt: new Date(),
         },
@@ -212,13 +212,15 @@ export class UserOrgPermissionsService {
       roleDescription,
       permissions,
       deniedPermissions,
+      isActive,
+      assignedAt,
     } = updates;
 
     try {
+      // Se busca sin filtrar por isActive para permitir reactivar un registro (isActive = 'Y').
       const permission = await this.prisma.userOrgPermission.findFirst({
         where: {
           id,
-          isActive: 'Y',
         },
       });
 
@@ -234,7 +236,9 @@ export class UserOrgPermissionsService {
         roleName !== undefined ||
         roleDescription !== undefined ||
         permissions !== undefined ||
-        deniedPermissions !== undefined;
+        deniedPermissions !== undefined ||
+        isActive !== undefined ||
+        assignedAt !== undefined;
 
       if (!hasUpdatableFields) {
         throw new RpcException({
@@ -258,6 +262,10 @@ export class UserOrgPermissionsService {
             ? {
                 deniedPermissions: this.serializePermissions(deniedPermissions),
               }
+            : {}),
+          ...(isActive !== undefined ? { isActive } : {}),
+          ...(assignedAt !== undefined
+            ? { assignedAt: new Date(assignedAt) }
             : {}),
           updatedAt: new Date(),
         },
